@@ -125,6 +125,14 @@ impl Post {
             regex.is_match(&self.com) ||
             regex.is_match(&self.filename)
     }
+
+    pub fn image_url(&self, board_name: &str) -> Option<String> {
+        if self.filename.is_empty() || self.ext.is_empty() {
+            return None
+        }
+        Some(format!("https://i.4cdn.org/{}/{}{}",
+                     board_name, self.tim, self.ext))
+        }
 }
 
 impl fmt::Display for Post {

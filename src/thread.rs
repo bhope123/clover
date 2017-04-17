@@ -154,6 +154,22 @@ impl Thread {
             None => None
         }
     }
+
+    /// Get a `Vec` of all the image urls in the thread.
+    pub fn image_urls(&self) -> Vec<String> {
+        let mut images: Vec<String> = Vec::new();
+        let topic_img = self.topic.image_url(&self.board_name);
+        if topic_img.is_some() {
+            images.push(topic_img.unwrap());
+        }
+        for reply in &self.replies {
+            match reply.image_url(&self.board_name) {
+                Some(i) => images.push(i),
+                None => (),
+            }
+        }
+        images
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]

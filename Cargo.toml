@@ -1,0 +1,16 @@
+[package]
+name = "clover"
+version = "0.1.0"
+authors = ["mikopits <mikopits@gmail.com>"]
+
+[dependencies]
+chrono = "0.3.0"
+env_logger = "0.4.2"
+hyper = "0.10.8"
+log = "0.3.7"
+regex = "0.2.1"
+reqwest = "0.5.1"
+serde = "0.9.13"
+serde_derive = "0.9.13"
+serde_json = "0.9.10"
+time = "0.1.36"

@@ -6,9 +6,9 @@ An (Unofficial) Rust library providing a wrapper around the 4chan API.
 Usage
 -----
 
-For various reasons, I am not exporting this on crates.io
+For various reasons, I am not exporting this on crates.io.
 
-Feel free to [add it as a dependency from git](http://doc.crates.io/specifying-dependencies.html#specifying-dependencies-from-git-repositories)
+Feel free to [add it as a dependency from git](http://doc.crates.io/specifying-dependencies.html#specifying-dependencies-from-git-repositories).
 
 Example usage:
 
@@ -30,5 +30,5 @@ fn main() {
 }
 ```
 
-See [the provided example](https://github.com/mikopits/clover/examples/find_threads.rs)
+See [the provided example](https://github.com/mikopits/clover/blob/master/src/examples/find_threads.rs)
 for a more detailed explanation on how to use this library.

@@ -155,6 +155,11 @@ impl Thread {
         }
     }
 
+    pub fn url(&self) -> String {
+        format!("https://boards.4chan.org/{}/thread/{}",
+                &self.board_name, &self.topic.no)
+    }
+
     /// Get a `Vec` of all the image urls in the thread.
     pub fn image_urls(&self) -> Vec<String> {
         let mut images: Vec<String> = Vec::new();

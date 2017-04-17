@@ -3,7 +3,8 @@ clover
 
 An (Unofficial) Rust library providing a wrapper around the 4chan API.
 
-##Usage
+Usage
+-----
 
 For various reasons, I am not exporting this on crates.io
 

@@ -30,5 +30,5 @@ fn main() {
 }
 ```
 
-See [the provided example](https://github.com/mikopits/clover/blob/master/src/examples/find_threads.rs)
+See [the provided example](https://github.com/mikopits/clover/blob/master/examples/find_threads.rs)
 for a more detailed explanation on how to use this library.

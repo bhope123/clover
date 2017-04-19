@@ -126,6 +126,7 @@ impl Thread {
                 self.expired = true;
                 self.wants_update = false;
                 // TODO: Delete from cache? If so, now?
+                // How long do we want to keep expired threads in cache?
                 Ok(())
             }
             _ => Err(::Error::UnexpectedResponse)

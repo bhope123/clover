@@ -81,7 +81,8 @@ impl Board {
     /// the OP's name, comment, subject, or filename. The search is case
     /// insensitive and uses unicode.
     ///
-    /// The threads are updated before they are returned.
+    /// The threads are updated before they are returned. Automatically
+    /// excludes expired threads.
     pub fn find_cached(&self, query: &str) -> ::Result<Vec<::Thread>> {
         let mut regex_builder = RegexBuilder::new(query);
         let regex = try!(regex_builder
@@ -94,8 +95,17 @@ impl Board {
             .filter(|&t| t.is_match(&regex))
             .cloned()
             .collect::<Vec<::Thread>>();
+
+        // TODO: A returned thread is cloned twice. Needs refactoring.
+        let mut return_threads = Vec::new();
         for mut thread in &mut threads {
             try!(thread.update());
+            if !thread.expired {
+                return_threads.push(thread.clone());
+            } else {
+                // Update cache, removing expired threads
+                self.thread_cache.lock().unwrap().remove(thread.topic.no);
+            }
         }
 
         Ok(threads)

@@ -1,6 +1,5 @@
 use std::io::Read;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use regex::RegexBuilder;
 use chrono::{DateTime, UTC};
@@ -12,23 +11,23 @@ use reqwest::StatusCode;
 #[derive(Debug)]
 pub struct Board {
     pub name: String,
-    pub client: Rc<RefCell<::Client>>,
-    pub thread_cache: Rc<RefCell<::ThreadCache>>,
-    catalog_last_modified: RefCell<Option<DateTime<UTC>>>
+    pub client: Arc<Mutex<::Client>>,
+    pub thread_cache: Arc<Mutex<::ThreadCache>>,
+    catalog_last_modified: Arc<Mutex<Option<DateTime<UTC>>>>
 }
 
 impl Board {
     /// Creates a new `Board`.
-    pub fn new(client: Rc<RefCell<::Client>>, name: &str) -> ::Result<Board> {
-        if !client.borrow().is_valid_board(name) {
+    pub fn new(client: Arc<Mutex<::Client>>, name: &str) -> ::Result<Board> {
+        if !client.lock().unwrap().is_valid_board(name) {
             return Err(::Error::InvalidBoardName)
         }
 
         Ok(Board {
             client: client,
             name: name.to_string(),
-            thread_cache: Rc::new(RefCell::new(::ThreadCache::new())),
-            catalog_last_modified: RefCell::new(None)
+            thread_cache: Arc::new(Mutex::new(::ThreadCache::new())),
+            catalog_last_modified: Arc::new(Mutex::new(None))
         })
     }
 
@@ -36,9 +35,9 @@ impl Board {
     /// thread cache. Returns `Some<Catalog>` if the catalog was updated,
     /// and `None` if the catalog was not modified since the last request.
     pub fn catalog(&self) -> ::Result<Option<Catalog>> {
-        let mut res = match *self.catalog_last_modified.borrow() {
+        let mut res = match *self.catalog_last_modified.lock().unwrap() {
             None => {
-                try!(self.client.borrow_mut().get(
+                try!(self.client.lock().unwrap().get(
                         &format!("https://a.4cdn.org/{}/catalog.json",
                                  self.name),
                         None))
@@ -48,7 +47,7 @@ impl Board {
                 //                    %a,  %d %b  %Y   %T       GMT
                 let format = "%a, %d %b %Y %T GMT";
                 let fmt_date = dt.format(&format).to_string();
-                try!(self.client.borrow_mut().get(
+                try!(self.client.lock().unwrap().get(
                         &format!("https://a.4cdn.org/{}/catalog.json",
                                  self.name),
                         Some(::IfModifiedSince(fmt_date))))
@@ -57,14 +56,14 @@ impl Board {
 
         match *res.status() {
             StatusCode::Ok => {
-                *self.catalog_last_modified.borrow_mut() = Some(UTC::now());
+                *self.catalog_last_modified.lock().unwrap() = Some(UTC::now());
                 let mut buf = String::new();
                 try!(res.read_to_string(&mut buf));
                 let corrected = r#"{"pages":"#.to_string() + &buf + "}";
                 let catalog: Catalog = try!(::serde_json::from_str(&corrected));
 
                 for topic in catalog.topics() {
-                    self.thread_cache.borrow_mut()
+                    self.thread_cache.lock().unwrap()
                         .insert(::Thread::from_topic(topic.clone(),
                         &self.name, self.client.clone()));
                 }
@@ -83,27 +82,23 @@ impl Board {
     /// insensitive and uses unicode.
     ///
     /// The threads are updated before they are returned.
-    pub fn find_cached(&self, query: &str) -> ::Result<Option<Vec<::Thread>>> {
+    pub fn find_cached(&self, query: &str) -> ::Result<Vec<::Thread>> {
         let mut regex_builder = RegexBuilder::new(query);
         let regex = try!(regex_builder
                          .case_insensitive(true)
                          .unicode(true)
                          .build());
 
-        let mut threads = self.thread_cache.borrow().threads
+        let mut threads = self.thread_cache.lock().unwrap().threads
             .values()
             .filter(|&t| t.is_match(&regex))
             .cloned()
             .collect::<Vec<::Thread>>();
-        if threads.is_empty() {
-            return Ok(None)
-        } else {
-            for mut thread in &mut threads {
-                try!(thread.update());
-            }
+        for mut thread in &mut threads {
+            try!(thread.update());
         }
 
-        Ok(Some(threads))
+        Ok(threads)
     }
 
     /// Get a `Thread` that you know the thread number of. First checks that
@@ -111,16 +106,16 @@ impl Board {
     /// makes a request, adds the created struct to the cache, and returns
     /// the thread.
     pub fn get_thread(& self, thread_no: u64) -> ::Result<::Thread> {
-        if self.thread_cache.borrow().contains(thread_no) {
-            try!(self.thread_cache.borrow_mut().threads
+        if self.thread_cache.lock().unwrap().contains(thread_no) {
+            try!(self.thread_cache.lock().unwrap().threads
                 .get_mut(&thread_no)
                 .unwrap()
                 .update());
-            return Ok(self.thread_cache.borrow()
+            return Ok(self.thread_cache.lock().unwrap()
                       .get(thread_no).unwrap().clone())
         }
 
-        let mut res = try!(self.client.borrow_mut().get(
+        let mut res = try!(self.client.lock().unwrap().get(
                 &format!("https://a.4cdn.org/{}/thread/{}.json",
                          self.name, thread_no), None));
         let mut buf = String::new();
@@ -129,7 +124,7 @@ impl Board {
             ::serde_json::from_str(&buf));
         let thread = ::Thread::from_deserializer(
             deserializer, &self.name, self.client.clone());
-        self.thread_cache.borrow_mut().insert(thread.clone());
+        self.thread_cache.lock().unwrap().insert(thread.clone());
 
         Ok(thread)
     }

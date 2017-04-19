@@ -103,21 +103,17 @@ impl Client {
 
 #[cfg(test)]
 mod test {
-    use std::cell::RefCell;
-    use std::rc::Rc;
-    use env_logger;
+    use std::sync::{Arc, Mutex};
 
     #[test]
     fn get_board() {
-        env_logger::init().unwrap();
-        let client = Rc::new(RefCell::new(::Client::new().unwrap()));
+        let client = Arc::new(Mutex::new(::Client::new().unwrap()));
         let g = ::Board::new(client, "g").unwrap();
         let _ = g.catalog().unwrap();
-        assert!(g.thread_cache.borrow().threads.len() > 0);
+        assert!(g.thread_cache.lock().unwrap().threads.len() > 0);
         let sticky_candidates = g.find_cached("installgentoo")
             .expect("Found no matches for installgentoo");
-        assert!(sticky_candidates.is_some());
-        assert!(sticky_candidates.unwrap().len() > 0);
+        assert!(sticky_candidates.len() > 0);
     }
 }
 

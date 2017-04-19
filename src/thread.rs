@@ -1,8 +1,7 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::Read;
 use std::fmt;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 
 use chrono::{DateTime, Duration, UTC};
@@ -13,7 +12,7 @@ use reqwest::StatusCode;
 #[derive(Clone, Debug)]
 pub struct Thread {
     pub board_name: String,
-    client: Rc<RefCell<::Client>>,
+    client: Arc<Mutex<::Client>>,
     pub topic: ::Post,
     pub replies: Vec<::Post>,
     pub expired: bool,
@@ -26,7 +25,7 @@ impl Thread {
     /// Creates a new `Thread` from a topic `Post`.
     pub fn from_topic(post: ::Post,
                       board_name: &str,
-                      client: Rc<RefCell<::Client>>) -> Thread {
+                      client: Arc<Mutex<::Client>>) -> Thread {
         Thread {
             board_name: board_name.to_string(),
             client: client,
@@ -48,17 +47,14 @@ impl Thread {
     /// Creates a new `Thread` from a `ThreadDeserializer`.
     pub fn from_deserializer(deserializer: ThreadDeserializer,
                              board_name: &str,
-                             client: Rc<RefCell<::Client>>) -> Thread {
+                             client: Arc<Mutex<::Client>>) -> Thread {
         let topic = deserializer.posts.first().unwrap().to_owned();
 
         Thread {
             board_name: board_name.to_string(),
             client: client,
             topic: topic.clone(),
-            replies: deserializer.posts.iter()
-                                       .skip(1)
-                                       .cloned()
-                                       .collect(),
+            replies: deserializer.posts.iter().skip(1).cloned().collect(),
             expired: false,
             wants_update: true,
             last_reply_no: {
@@ -86,7 +82,7 @@ impl Thread {
             }
         }
 
-        let mut res = try!(self.client.borrow_mut().get(
+        let mut res = try!(self.client.lock().unwrap().get(
                 &format!("https://a.4cdn.org/{}/thread/{}.json",
                          self.board_name, self.topic.no),
                          self.topic.if_modified_since()));

@@ -70,3 +70,4 @@ and should be handled internally.
 * `Post` field types probably aren't the most optimal for memory.
 * Write more tests. Preferably ones that don't fail when you're not connected
 to the internet.
+* Get rid of the time and hyper dependencies.

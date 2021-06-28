@@ -99,6 +99,10 @@ impl Client {
     pub fn is_valid_board(&self, name: &str) -> bool {
         self.all_boards.contains(&name.to_string())
     }
+    
+    pub fn all_boards(&self) -> Vec<String> {
+        self.all_boards
+    }
 }
 
 #[cfg(test)]

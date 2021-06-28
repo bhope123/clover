@@ -101,7 +101,7 @@ impl Client {
     }
     
     pub fn all_boards(&self) -> Vec<String> {
-        self.all_boards
+        self.all_boards.clone()
     }
 }
 
